@@ -169,3 +169,6 @@ Insert, update, and delete operations on transactional databases such as innoDB 
 # Commit all pending transaction queries
 db.commit()
 ```
+
+Forked from https://github.com/knadh/simplemysql
+Fixed compatiblity with Python3 and made some other changes.
