@@ -206,7 +206,7 @@ class SimpleMysql:
 			self.cur.execute(sql, params)
 		except MySQLdb.OperationalError as e:
 			# mysql timed out. reconnect and retry once
-			if e.args[0] == 2006:
+			if e.args[0] == 2006 or e.args[0] == 2013:
 				self.connect()
 				self.cur.execute(sql, params)
 			else:
