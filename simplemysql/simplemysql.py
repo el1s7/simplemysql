@@ -23,7 +23,7 @@
 	May 2013
 """
 
-import MySQLdb
+import MySQLdb, duckdb
 from collections import namedtuple
 from itertools import repeat
 
@@ -37,6 +37,8 @@ class SimpleMysql:
 		self.conf = kwargs
 		self.conf["keep_alive"] = kwargs.get("keep_alive", False)
 		self.conf["charset"] = kwargs.get("charset", "utf8")
+		self.conf["file"] = kwargs.get("file", False)
+		self.conf["read_only"] = kwargs.get("read_only", False)
 		self.conf["host"] = kwargs.get("host", "localhost")
 		self.conf["port"] = kwargs.get("port", 3306)
 		self.conf["autocommit"] = kwargs.get("autocommit", False)
@@ -44,7 +46,15 @@ class SimpleMysql:
 		self.conf["ssl"] = kwargs.get("ssl", False)
 		self.connect()
 
+
+
 	def connect(self):
+		if self.conf['file']:
+			return self.connect_file()
+		
+		return self.connect_server()
+
+	def connect_server(self):
 		"""Connect to the mysql server"""
 
 		try:
@@ -61,6 +71,22 @@ class SimpleMysql:
 										charset=self.conf['charset'],read_timeout=self.conf["read_timeout"])
 			self.cur = self.conn.cursor()
 			self.conn.autocommit(self.conf["autocommit"])
+		except:
+			print ("MySQL connection failed")
+			raise
+	
+	def connect_file(self):
+		"""Connect to a local file or a :memory: database"""
+		
+		try:
+			self.conn = duckdb.connect(
+				database=self.conf['file'], 
+				read_only=self.conf['read_only'],
+				charset=self.conf['charset'],
+				read_timeout=self.conf["read_timeout"]
+			)
+			self.conn.autocommit(self.conf["autocommit"])
+			self.cur = self.conn.cursor()
 		except:
 			print ("MySQL connection failed")
 			raise
