@@ -77,7 +77,7 @@ class SimpleMysql:
 	
 	def connect_file(self):
 		"""Connect to a local file or a :memory: database"""
-		
+
 		try:
 			self.conn = duckdb.connect(
 				database=self.conf['file'], 
