@@ -81,11 +81,9 @@ class SimpleMysql:
 		try:
 			self.conn = duckdb.connect(
 				database=self.conf['file'], 
-				read_only=self.conf['read_only'],
-				charset=self.conf['charset'],
-				read_timeout=self.conf["read_timeout"]
+				read_only=self.conf['read_only']
 			)
-			self.conn.autocommit(self.conf["autocommit"])
+			# self.conn.set_autocommit(self.conf["autocommit"])
 			self.cur = self.conn.cursor()
 		except:
 			print ("MySQL connection failed")
@@ -224,7 +222,7 @@ class SimpleMysql:
 		return self.query(sql, where[1] if where and len(where) > 1 else None).rowcount
 
 
-	def query(self, sql, params = None):
+	def query(self, sql, params = []):
 		"""Run a raw query"""
 
 		# check if connection is alive. if not, reconnect
@@ -235,6 +233,29 @@ class SimpleMysql:
 			if e.args[0] == 2006 or e.args[0] == 2013:
 				self.connect()
 				self.cur.execute(sql, params)
+			else:
+				raise
+		except:
+			print("Query failed")
+			raise
+
+		return self.cur
+		
+	
+	def execute(self, sql, params=[]):
+		return self.query(sql, params)
+
+	def executemany(self, sql, params=[]):
+		"""Run a raw query"""
+
+		# check if connection is alive. if not, reconnect
+		try:
+			self.cur.executemany(sql, params)
+		except MySQLdb.OperationalError as e:
+			# mysql timed out. reconnect and retry once
+			if e.args[0] == 2006 or e.args[0] == 2013:
+				self.connect()
+				self.executemany(sql, params)
 			else:
 				raise
 		except:
