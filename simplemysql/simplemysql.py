@@ -23,7 +23,7 @@
 	May 2013
 """
 
-import MySQLdb, duckdb
+import MySQLdb, sqlite3
 from collections import namedtuple
 from itertools import repeat
 
@@ -80,9 +80,9 @@ class SimpleMysql:
 		"""Connect to a local file or a :memory: database"""
 
 		try:
-			self.conn = duckdb.connect(
+			self.conn = sqlite3.connect(
 				database=self.conf['file'], 
-				read_only=self.conf['read_only']
+				timeout=self.conf['read_timeout'],
 			)
 			# self.conn.set_autocommit(self.conf["autocommit"])
 			self.cur = self.conn.cursor()
@@ -226,7 +226,7 @@ class SimpleMysql:
 	def query(self, sql, params = []):
 		"""Run a raw query"""
 		params = params if params else []
-		
+
 		# check if connection is alive. if not, reconnect
 		try:
 			self.cur.execute(sql, params)

@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
 	name="simplemysql",
-	version="1.261",
+	version="1.262",
 	description="An ultra simple wrapper for Python MySQLdb with very basic functionality",
 	author="Elis, Kailash Nadh",
 	author_email="kailash.nadh@gmail.com",
@@ -22,5 +22,5 @@ setup(
 		"Topic :: Database",
 		"Topic :: Software Development :: Libraries"
 	],
-	install_requires=["mysqlclient","duckdb"]
+	install_requires=["mysqlclient"]
 )
