@@ -44,6 +44,7 @@ class SimpleMysql:
 		self.conf["autocommit"] = kwargs.get("autocommit", False)
 		self.conf["read_timeout"] = kwargs.get("read_timeout",60)
 		self.conf["ssl"] = kwargs.get("ssl", False)
+		self.conf["table_escape"] = kwargs.get("table_escape", '`')
 		self.connect()
 
 
@@ -307,7 +308,7 @@ class SimpleMysql:
 	def _select(self, table=None, fields=(), where=None, order=None, limit=None):
 		"""Run a select query"""
 
-		sql = "SELECT %s FROM `%s`" % (",".join(fields), table)
+		sql = "SELECT %s FROM %s%s%s" % (",".join(fields),self.conf["table_escape"], table, self.conf["table_escape"])
 
 		# where conditions
 		if where and len(where) > 0:
