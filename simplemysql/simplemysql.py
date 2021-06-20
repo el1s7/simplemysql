@@ -248,6 +248,9 @@ class SimpleMysql:
 	def escape_string(self, s):
 		return MySQLdb.escape_string(s).decode()
 
+	def escape(self, s):
+		return self.escape_string(s)
+
 	def executemany(self, sql, params=[]):
 		"""Run a raw query"""
 
