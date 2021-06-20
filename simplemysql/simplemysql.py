@@ -78,12 +78,16 @@ class SimpleMysql:
 	
 	def connect_file(self):
 		"""Connect to a local file or a :memory: database"""
+		kwarg = {
+			'database': self.conf['file'],
+			'timeout': self.conf['read_timeout']
+		}
+		
+		if self.conf['autocommit']:
+			kwarg['isolation_level']=None
 
 		try:
-			self.conn = sqlite3.connect(
-				database=self.conf['file'], 
-				timeout=self.conf['read_timeout'],
-			)
+			self.conn = sqlite3.connect(**kwarg)
 			# self.conn.set_autocommit(self.conf["autocommit"])
 			self.cur = self.conn.cursor()
 		except:
