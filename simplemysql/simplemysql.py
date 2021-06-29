@@ -27,6 +27,7 @@ import MySQLdb, sqlite3
 from collections import namedtuple
 from itertools import repeat
 
+from .model import Model
 
 class SimpleMysql:
 	conn = None
@@ -47,7 +48,12 @@ class SimpleMysql:
 		self.conf["table_escape"] = kwargs.get("table_escape", '`')
 		self.connect()
 
+		class ModelExtend(Model):
+			pass
 
+		ModelExtend.db = self
+
+		self.Model = ModelExtend
 
 	def connect(self):
 		if self.conf['file']:

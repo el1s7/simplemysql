@@ -4,10 +4,10 @@ from setuptools import setup
 
 setup(
 	name="simplemysql",
-	version="1.262",
+	version="1.263",
 	description="An ultra simple wrapper for Python MySQLdb with very basic functionality",
-	author="Elis, Kailash Nadh",
-	author_email="kailash.nadh@gmail.com",
+	author="Elis",
+	author_email="github@elis.cc",
 	packages=['simplemysql'],
 	download_url="http://github.com/elis-k/simplemysql",
 	license="GPLv2",

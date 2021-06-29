@@ -1,7 +1,12 @@
 ## SimpleMysql
 
-An ultra simple wrapper for Python MySQLdb with very basic functionality compatible with Python3.
+An simple MySQL wrapper and ORM for Python
 
+## Reference
+- [Installation](#installation)
+- [Usage](#usage)
+- [API](#api)
+- [ORM Model](#model)
 
 ## Installation
 With pip 
@@ -39,8 +44,19 @@ db = SimpleMysql(
 )
 
 ```
+## For SQLite Connection
+```python
+from simplemysql import SimpleMysql
+
+db = SimpleMysql(
+	file='./data.db' # Or :memory: for memory
+)
+
+```
 
 
+
+## API
 ```python
 # insert a record to the <em>books</em> table
 db.insert("books", {"type": "paperback", "name": "Time Machine", "price": 5.55, year: "1997"})
@@ -170,5 +186,44 @@ Insert, update, and delete operations on transactional databases such as innoDB 
 db.commit()
 ```
 
-Forked from https://github.com/knadh/simplemysql
-Fixed compatiblity with Python3 and made some other changes.
+## Model
+
+A light-weight ORM class 
+
+```python
+from SimpleMysql import Model
+
+class Users(Model):
+	table='users'
+	
+	columns=[
+		'id',
+		'email',
+		'username',
+		'first_name',
+		'last_name',
+		'age'
+	]
+
+	keys=[
+		'id',
+		'email',
+		'username'
+	]
+
+# Load an user
+user = Users(id=5)
+print(user.first_name)
+
+# Load with multiple Index Keys | Same as username = 'jack' AND email = 'jack'
+user = Users(username='jack', email='jack1@email.com')
+print(user.first_name)
+
+# Update user
+user.age = user.age + 1
+user.email = "update@email.com"
+user.save()
+```
+
+Base version forked from https://github.com/knadh/simplemysql :)
+
