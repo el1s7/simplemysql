@@ -1,6 +1,6 @@
 ## SimpleMysql
 
-An simple MySQL wrapper and ORM for Python
+An simple MySQL wrapper and ORM for Python3
 
 ## Reference
 - [Installation](#installation)
