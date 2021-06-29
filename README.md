@@ -9,15 +9,11 @@ An simple MySQL wrapper and ORM for Python
 - [ORM Model](#model)
 
 ## Installation
-With pip 
-
 ```pip3 install git+https://github.com/elis-k/simplemysql```
 
-Or from the source
-
-```python setup.py install```
 
 # Usage
+
 ## For normal connection
 ```python
 from simplemysql import SimpleMysql
@@ -30,6 +26,7 @@ db = SimpleMysql(
 	keep_alive=True # try and reconnect timedout mysql connections?
 )
 ```
+
 ## For SSL Connection
 ```python
 from simplemysql import SimpleMysql
@@ -54,9 +51,7 @@ db = SimpleMysql(
 
 ```
 
-
-
-## API
+Then after you've connected you can start using the API just like this
 ```python
 # insert a record to the <em>books</em> table
 db.insert("books", {"type": "paperback", "name": "Time Machine", "price": 5.55, year: "1997"})
@@ -66,7 +61,8 @@ book = db.getOne("books", ["name"], ["year = 1997"])
 print "The book's name is " + book.name
 ```
 
-# Query methods
+
+# API
 insert(), update(), delete(), getOne(), getAll(), lastId(), query()
 
 ## insert(table, record{})
