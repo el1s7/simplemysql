@@ -190,28 +190,45 @@ A light-weight ORM class
 from SimpleMysql import Model
 
 class Users(Model):
+
 	table='users'
 	
-	columns=[
-		'id',
-		'email',
-		'username',
-		'first_name',
-		'last_name',
-		'age'
-	]
+	'''
+		You can either set columns as a list or a specify column dict schema.
+		By using dict schema (like example below), table will get auto-created if it doesn't exist.
+	'''
+	columns={
+		'id':{
+			'type': 'INT',
+			'primary': True,
+			'autoInrement':True,
+		},
+		'email':{
+			'type': 'VARCHAR',
+			'length': '255',
+			'unique': True
+		},
+		'username':{
+			'type': 'VARCHAR',
+			'length': '100',
+			'unique': True
+		},
+		'full_name':{
+			'type': 'VARCHAR',
+			'null': True,
+		},
+		'date_added':{
+			'type': 'DATETIME',
+			'default': 'CURRENT_TIMESTAMP'
+		}
+	}
 
-	keys=[
-		'id',
-		'email',
-		'username'
-	]
 
-# Load an user
+# Load an user | Using the index keys only
 user = Users(id=5)
 print(user.first_name)
 
-# Load with multiple Index Keys | Same as username = 'jack' AND email = 'jack'
+# Load with multiple Index Keys (Joined with AND)
 user = Users(username='jack', email='jack1@email.com')
 print(user.first_name)
 
@@ -219,6 +236,7 @@ print(user.first_name)
 user.age = user.age + 1
 user.email = "update@email.com"
 user.save()
+# user.commit() if autocommit is turned off
 ```
 
 Base version forked from https://github.com/knadh/simplemysql :)

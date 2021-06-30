@@ -1,4 +1,5 @@
 from .exceptions import DatabaseError
+from .helpers import run_once
 
 class Model:
 
@@ -19,7 +20,12 @@ class Model:
 		'loaded',
 		'isLoaded',
 		'unsaved',
+		'__create_table__',
+		'__create',
+		'__doesTableExist'
 	]
+
+	__create_table__ = True
 
 	db = None
 
@@ -38,11 +44,11 @@ class Model:
 
 
 	def __init__(self, **kwargs):
+		self.__create()
 		self.load(**kwargs)
 		pass
 	
-	def __setattr__(self, name, value):		
-		
+	def __setattr__(self, name, value):				
 		if name == 'columns' or name == 'keys':
 			if not isinstance(value, list):
 				raise DatabaseError("Model columns should be a list")
@@ -56,9 +62,80 @@ class Model:
 			return True
 
 		return object.__setattr__(self, name, value)
-		
-	
 
+	def __doesTableExist(self):
+		try:
+			get = self.db.execute("SELECT * FROM {} LIMIT 1".format(self.db.escape(self.table)))
+			if not get:
+				return False
+			return True
+		except Exception as e:
+			return False
+
+	@run_once
+	def __create(self):
+		allowed_types = [
+			"INT", "VARCHAR", "TEXT", "DATE", "TINYINT", "SMALLINT", "MEDIUMINT", "INT", "BIGINT", "DECIMAL", "FLOAT", "DOUBLE", "REAL","BIT","BOOLEAN","SERIAL","DATE","DATETIME","TIMESTAMP", "TIME", "YEAR", "CHAR", "VARCHAR", 
+			"TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "BINARY", "VARBINARY", "TINYBLOB", "MEDIUMBLOB", "BLOB", "LONGBLOB", "ENUM", "SET", "GEOMETRY", "POINT", "LINESTRING", "POLYGON", "MULTIPOINT", "MULTILINESTRING", "MULTIPOLYGON", "GEOMETRYCOLLECTION"
+		]
+		
+		if isinstance(self.columns, dict) and not self.__doesTableExist() and self.__create_table__:
+			fields = []
+			primary_keys = []
+			unique_keys = []
+
+			for column, options in self.columns.items():
+
+				if not options['type'] or options['type'] not in allowed_types:
+					raise DatabaseError("Invalid type column type '%s'" % options['type'])
+				
+				if options.get('primary') and column not in primary_keys and column not in unique_keys:
+					primary_keys.append(column)
+				
+				if options.get('unique') and column not in primary_keys and column not in unique_keys:
+					unique_keys.append(column)
+
+				parseOptions = [
+					options['type'] + (
+						'(%s)' % options.get('length') if options.get('length') else ''
+					),
+					'NULL' if options.get('null') else 'NOT NULL',
+					'on update CURRENT_TIMESTAMP' if options.get('onUpdateTime') else '',
+					'DEFAULT ' + (
+						options.get('default') if (
+							options.get('default') in ['CURRENT_TIMESTAMP', 'NULL'] or isinstance(options.get('default'), int)
+							) else ("'%s'" % self.db.escape(options.get('default')))
+					) if options.get('default') else '',
+					'AUTO_INCREMENT' if options.get('autoIncrement') else '',
+				]
+
+				fields.append(
+					'`{}` {}'.format(self.db.escape(column), ' '.join(parseOptions))
+				)
+				
+			fields.extend([
+				'PRIMARY KEY (`%s`)' % self.db.escape(pk) for pk in primary_keys
+			])
+
+			fields.extend([
+				'UNIQUE (`%s`)' % self.db.escape(uk) for uk in unique_keys
+			])
+
+			if not isinstance(self.keys, list) or not len(self.keys):
+				object.__setattr__(self, 'keys', [
+					*primary_keys,
+					*unique_keys
+				])
+
+			table_query = """
+			CREATE TABLE {}. ({})
+			ENGINE = InnoDB;
+			""".format(self.db.escape(self.table), ',\r\n'.join(fields))
+
+			return self.db.execute(table_query)
+		
+		return False
+	
 	def __parse_loaders(self, **kwargs):
 		self.load_args = kwargs
 		self.loaders = []
@@ -129,6 +206,10 @@ class Model:
 		
 		return True
 
+	@classmethod
+	def commit(cls):
+		return cls.db.commit()
+	
 	@classmethod 
 	def all(cls, where=None):
 		return cls.db.getAll(cls.table,'*',where)
