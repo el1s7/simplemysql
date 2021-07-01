@@ -44,6 +44,7 @@ class Model:
 	insert_error_msg = "Couldn't add this entry"
 
 	def __init__(self, *args, **kwargs):
+		self.loaded = False
 		self.__create()
 		self.load(*args, **kwargs)
 		pass
@@ -174,7 +175,7 @@ class Model:
 		return self.load(*args, **kwargs)
 
 	def load(self, *args, **kwargs):
-		self.raise_for_load = kwargs.get('raise_for_load', True)
+		self.raise_for_load = kwargs.get('raise_for_load', self.raise_for_load if hasattr(self, 'raise_for_load') else True)
 		where = self.__parse_loaders(*args,**kwargs)
 
 		if not where:
@@ -215,6 +216,19 @@ class Model:
 			object.__setattr__(self, name, value)
 		
 		return self
+
+	def items(self):
+		if not self.loaded:
+			return False
+		
+		_items = []
+
+		for column in self.columns:
+			_items.append([
+				column, getattr(self, column) if hasattr(self, column) else None
+			])
+		
+		return _items
 
 	@classmethod
 	def commit(cls):
