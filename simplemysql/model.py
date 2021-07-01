@@ -1,9 +1,5 @@
 from .exceptions import DatabaseError
 from .helpers import run_once
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .simplemysql import SimpleMysql
 
 class Model:
 
@@ -32,7 +28,7 @@ class Model:
 
 	__create_table__ = True
 
-	db: SimpleMysql = None
+	db = None
 
 	'''	
 		Configuration
