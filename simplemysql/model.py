@@ -39,9 +39,9 @@ class Model:
 
 	keys = [] # Table Index Keys
 
-	select_error_msg = ""
-	update_error_msg = ""
-	insert_error_msg = ""
+	select_error_msg = "This entry doesn't exist"
+	update_error_msg = "Couldn't updating this entry"
+	insert_error_msg = "Couldn't add this entry"
 
 	def __init__(self, *args, **kwargs):
 		self.__create()
@@ -165,7 +165,6 @@ class Model:
 	def isLoaded(self):
 		return hasattr(self, 'keys') and isinstance(self.keys, list) and hasattr(self, self.keys[0]) and self.loaded
 
-
 	def reload(self):
 		if not self.loaded:
 			return False
@@ -180,13 +179,13 @@ class Model:
 
 		if not where:
 			if self.raise_for_load:
-				raise DatabaseError(self.__dict__.get('select_error_msg',"This entry doesn't exist"))
+				raise DatabaseError(self.select_error_msg)
 			return False
 
 		get_query= self.db.getOne(self.table, '*', where)
 
 		if not get_query:
-			raise DatabaseError(self.__dict__.get('select_error_msg',"This entry doesn't exist"))
+			raise DatabaseError(self.select_error_msg)
 		
 		for name, value in get_query._asdict().items():
 			object.__setattr__(self, name, value)
@@ -210,7 +209,7 @@ class Model:
 		do_update = self.db.update(self.table, self.unsaved, where)
 
 		if not do_update:
-			raise DatabaseError(self.__dict__.get('update_error_msg',"Failed updating this entry"))
+			raise DatabaseError(self.update_error_msg)
 
 		for name, value in self.unsaved.items():
 			object.__setattr__(self, name, value)
@@ -233,7 +232,7 @@ class Model:
 			(where, params) if where else None
 		)
 		if not get_count:
-			raise DatabaseError(cls.__dict__.get('select_error_msg',"No entries found"))
+			raise DatabaseError(cls.select_error_msg)
 		return get_count.total_count
 
 	@classmethod
