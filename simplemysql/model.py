@@ -1,6 +1,9 @@
 from .exceptions import DatabaseError
 from .helpers import run_once
-from .simplemysql import SimpleMysql
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .simplemysql import SimpleMysql
 
 class Model:
 
