@@ -1,5 +1,6 @@
 from .exceptions import DatabaseError
 from .helpers import run_once
+from .simplemysql import SimpleMysql
 
 class Model:
 
@@ -11,6 +12,7 @@ class Model:
 		'select_error_msg',
 		'update_error_msg',
 		'insert_error_msg',
+		'commit',
 		'all',
 		'count',
 		'insert',
@@ -27,7 +29,7 @@ class Model:
 
 	__create_table__ = True
 
-	db = None
+	db: SimpleMysql = None
 
 	'''	
 		Configuration
@@ -42,10 +44,9 @@ class Model:
 	update_error_msg = ""
 	insert_error_msg = ""
 
-
-	def __init__(self, **kwargs):
+	def __init__(self, *args, **kwargs):
 		self.__create()
-		self.load(**kwargs)
+		self.load(*args, **kwargs)
 		pass
 	
 	def __setattr__(self, name, value):				
@@ -136,67 +137,78 @@ class Model:
 		
 		return False
 	
-	def __parse_loaders(self, **kwargs):
-		self.load_args = kwargs
-		self.loaders = []
+	def __parse_loaders(self, *args, **kwargs):
+		self.load_args = [args, kwargs]
+
+		if len(args) and args[0] and isinstance(args[0], str):
+			params = args[1] if len(args) == 2 and args[1] and isinstance(args[1], list) else []
+			return (args[0], params)
+
 		if self.keys and isinstance(self.keys, list):
+			keys = []
+			params = []
 			for key in self.keys:
 				if kwargs.get(key):
-					escaped_value = kwargs.get(key) if isinstance(kwargs.get(key), int) else (
-						"'%s'" % self.db.escape(kwargs.get(key))
+					keys.append(
+						'{} = %s'.format(self.db.escape(key))
 					)
-					self.loaders.append(
-						'`{}` = {}'.format(self.db.escape(key), escaped_value)
+					params.append(
+						kwargs.get(key)
 					)
+			
+			if not len(keys):
+				return False
+			
+			return (' AND '.join(keys), params)
 
-		return self.loaders
+		return False
 
 	def isLoaded(self):
 		return hasattr(self, 'keys') and isinstance(self.keys, list) and hasattr(self, self.keys[0]) and self.loaded
 
-	def load(self, **kwargs):
-		self.raise_for_load = kwargs.get('raise_for_load', True)
-		self.loaders = self.__parse_loaders(**kwargs)
 
-		if not len(self.loaders):
+	def reload(self):
+		if not self.loaded:
+			return False
+		
+		args, kwargs = self.load_args
+
+		return self.load(*args, **kwargs)
+
+	def load(self, *args, **kwargs):
+		self.raise_for_load = kwargs.get('raise_for_load', True)
+		where = self.__parse_loaders(*args,**kwargs)
+
+		if not where:
 			if self.raise_for_load:
 				raise DatabaseError(self.__dict__.get('select_error_msg',"This entry doesn't exist"))
 			return False
 
-		query_selector = "SELECT * FROM {} WHERE {}".format(
-			self.table, 
-			' AND '.join(self.loaders)
-		)
+		get_query= self.db.getOne(self.table, '*', where)
 
-		get_query = self.db.query(query_selector)
 		if not get_query:
 			raise DatabaseError(self.__dict__.get('select_error_msg',"This entry doesn't exist"))
 		
-		fetch_one = get_query.fetchone()
-		
-		if not fetch_one:
-			raise DatabaseError(self.__dict__.get('select_error_msg',"This entry doesn't exist"))
-		
-		for n in range(len(fetch_one)):
-			name = self.db.cur.description[n]
-			value = fetch_one[n]
+		for name, value in get_query._asdict().items():
 			object.__setattr__(self, name, value)
 		
 		self.unsaved = {}
 		self.loaded = True
 
-		return True
+		return self
 
 	def save(self):
 		if not len(self.unsaved):
 			return False
+		
+		args, kwargs = self.load_args
 
-		self.loaders = self.__parse_loaders(self.load_args)
+		where = self.__parse_loaders(*args, **kwargs)
 
-		if not len(self.loaders):
+		if not where:
 			return False
 
-		do_update = self.db.update(self.table, self.unsaved, [' AND '.join(self.loaders)])
+		do_update = self.db.update(self.table, self.unsaved, where)
 
 		if not do_update:
 			raise DatabaseError(self.__dict__.get('update_error_msg',"Failed updating this entry"))
@@ -204,19 +216,23 @@ class Model:
 		for name, value in self.unsaved.items():
 			object.__setattr__(self, name, value)
 		
-		return True
+		return self
 
 	@classmethod
 	def commit(cls):
 		return cls.db.commit()
 	
 	@classmethod 
-	def all(cls, where=None):
-		return cls.db.getAll(cls.table,'*',where)
+	def all(cls, where=None, params=[]):
+		return cls.db.getAll(cls.table,'*',
+			(where, params) if where else None
+		)
 	
 	@classmethod
-	def count(cls, where=None):
-		get_count = cls.db.getOne(cls.table, 'count(*) as total_count', where)
+	def count(cls, where=None, params=[]):
+		get_count = cls.db.getOne(cls.table, 'count(*) as total_count', 
+			(where, params) if where else None
+		)
 		if not get_count:
 			raise DatabaseError(cls.__dict__.get('select_error_msg',"No entries found"))
 		return get_count.total_count

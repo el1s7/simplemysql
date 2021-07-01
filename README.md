@@ -217,6 +217,9 @@ class Users(Model):
 			'type': 'VARCHAR',
 			'null': True,
 		},
+		'age':{
+			'type': 'INT',
+		},
 		'date_added':{
 			'type': 'DATETIME',
 			'default': 'CURRENT_TIMESTAMP'
@@ -226,11 +229,15 @@ class Users(Model):
 
 # Load an user | Using the index keys only
 user = Users(id=5)
-print(user.first_name)
+print(user.full_name)
 
 # Load with multiple Index Keys (Joined with AND)
 user = Users(username='jack', email='jack1@email.com')
-print(user.first_name)
+print(user.full_name)
+
+# Load with custom WHERE SQL
+user = Users("username = %s AND age > 21 AND (date_added > NOW() - INTERVAL 12 DAYS)", ['jack'])
+print(user.full_name)
 
 # Update user
 user.age = user.age + 1
