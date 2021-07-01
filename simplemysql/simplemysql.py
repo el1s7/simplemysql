@@ -319,7 +319,10 @@ class SimpleMysql:
 	def _select(self, table=None, fields=(), where=None, order=None, limit=None):
 		"""Run a select query"""
 
-		sql = "SELECT %s FROM %s%s%s" % (",".join(fields),self.conf["table_escape"], table, self.conf["table_escape"])
+		sql = "SELECT %s FROM %s%s%s" % (
+			",".join(fields) if isinstance(fields, list) or isinstance(fields, tuple) else fields, 
+			self.conf["table_escape"], table, self.conf["table_escape"]
+		)
 
 		# where conditions
 		if where and len(where) > 0:
@@ -348,7 +351,7 @@ class SimpleMysql:
 				 [tables[1] + "." + f for f in fields[1]]
 
 		sql = "SELECT %s FROM %s LEFT JOIN %s ON (%s = %s)" % \
-				( 	",".join(fields),
+				( 	",".join(fields) if isinstance(fields, list) or isinstance(fields, tuple) else fields,
 					tables[0],
 					tables[1],
 					tables[0] + "." + join_fields[0], \
