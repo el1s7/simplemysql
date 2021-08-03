@@ -100,14 +100,14 @@ Insert Multiple values into table.
 db.insertBatch("books", [{"discount": 0},{"discount":1},{"discount":3}])
 ```
 
-## insertOrUpdate(table, row{}, key)
+## insertOrUpdate(table, row{}, keys)
 Insert a new row, or update if there is a primary key conflict.
 
 ```python
 # insert a book with id 123. if it already exists, update values
 db.insertOrUpdate("books",
 		{"id": 123, type": "paperback", "name": "Time Machine", "price": 5.55},
-		"id"
+		["id"]
 )
 ```
 
