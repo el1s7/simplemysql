@@ -26,6 +26,7 @@
 import MySQLdb, sqlite3
 from collections import namedtuple
 from itertools import repeat
+import re
 
 from .model import Model
 
@@ -326,7 +327,8 @@ class SimpleMysql:
 
 		# where conditions
 		if where and len(where) > 0:
-			sql += " WHERE %s" % where[0]
+			is_not_where = re.match(r"^(\s+)?(limit [0-9]+|order by)", where[0])
+			sql += " %s" % where[0] if is_not_where else " WHERE %s" % where[0]
 
 		# order
 		if order:
