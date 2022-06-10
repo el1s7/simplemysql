@@ -260,7 +260,7 @@ class SimpleMysql:
 		return self.query(sql, params)
 
 	def escape_string(self, s):
-		return mysql_escape_string(s).decode()
+		return mysql_escape_string(s)
 
 	def escape(self, s):
 		return self.escape_string(s)
