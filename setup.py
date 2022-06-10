@@ -22,5 +22,5 @@ setup(
 		"Topic :: Database",
 		"Topic :: Software Development :: Libraries"
 	],
-	install_requires=["mysqlclient==2.0.3"]
+	install_requires=["mysqlclient"]
 )
