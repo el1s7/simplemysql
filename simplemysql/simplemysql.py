@@ -28,6 +28,7 @@ from collections import namedtuple
 from itertools import repeat
 import re
 
+from .helpers import mysql_escape_string
 from .model import Model
 
 class SimpleMysql:
@@ -259,7 +260,7 @@ class SimpleMysql:
 		return self.query(sql, params)
 
 	def escape_string(self, s):
-		return MySQLdb.escape_string(s).decode()
+		return mysql_escape_string(s).decode()
 
 	def escape(self, s):
 		return self.escape_string(s)
