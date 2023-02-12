@@ -237,7 +237,7 @@ class SimpleMysql:
 
 	def query(self, sql, params = []):
 		"""Run a raw query"""
-		params = params if params else []
+		params = params if params and len(params) > 0 else None
 
 		# check if connection is alive. if not, reconnect
 		try:
