@@ -32,28 +32,6 @@ from .helpers import mysql_escape_string
 from .model import Model
 
 
-class CursorClass(MySQLdb.cursors.DictCursor):
-	'''
-		Possibility to use namedtuple query results. Though dictionary is more reliable for certain column names.
-	'''
-	def fetchall(self):
-		'''
-			Returns a list of namedtuple objects
-		'''
-		data = super().fetchall()
-		if data and isinstance(data, (list, tuple)) and isinstance(data[0], dict):
-			return [namedtuple('Row', result.keys())(**result) for result in data]
-		return data
-
-	def fetchone(self):
-		'''
-			Returns a namedtuple object
-		'''
-		data = super().fetchone()
-		if data and isinstance(data, dict):
-			return namedtuple('Row', data.keys())(**data)
-
-
 class SimpleMysql:
 	conn = None
 	cur = None
