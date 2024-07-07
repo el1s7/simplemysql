@@ -31,6 +31,29 @@ import re
 from .helpers import mysql_escape_string
 from .model import Model
 
+
+class CursorClass(MySQLdb.cursors.DictCursor):
+	'''
+		Possibility to use namedtuple query results. Though dictionary is more reliable for certain column names.
+	'''
+	def fetchall(self):
+		'''
+			Returns a list of namedtuple objects
+		'''
+		data = super().fetchall()
+		if data and isinstance(data, (list, tuple)) and isinstance(data[0], dict):
+			return [namedtuple('Row', result.keys())(**result) for result in data]
+		return data
+
+	def fetchone(self):
+		'''
+			Returns a namedtuple object
+		'''
+		data = super().fetchone()
+		if data and isinstance(data, dict):
+			return namedtuple('Row', data.keys())(**data)
+
+
 class SimpleMysql:
 	conn = None
 	cur = None
@@ -68,17 +91,17 @@ class SimpleMysql:
 
 		try:
 			if not self.conf["ssl"]:
-			    self.conn = MySQLdb.connect(db=self.conf['db'], host=self.conf['host'],
+				self.conn = MySQLdb.connect(db=self.conf['db'], host=self.conf['host'],
 										port=self.conf['port'], user=self.conf['user'],
 										passwd=self.conf['passwd'],
 										charset=self.conf['charset'],read_timeout=self.conf["read_timeout"])
 			else:
-			    self.conn = MySQLdb.connect(db=self.conf['db'], host=self.conf['host'],
+				self.conn = MySQLdb.connect(db=self.conf['db'], host=self.conf['host'],
 										port=self.conf['port'], user=self.conf['user'],
 										passwd=self.conf['passwd'],
 										ssl=self.conf['ssl'],
 										charset=self.conf['charset'],read_timeout=self.conf["read_timeout"])
-			self.cur = self.conn.cursor()
+			self.cur = self.conn.cursor(MySQLdb.cursors.DictCursor)
 			self.conn.autocommit(self.conf["autocommit"])
 		except:
 			print ("MySQL connection failed")
@@ -96,8 +119,10 @@ class SimpleMysql:
 
 		try:
 			self.conn = sqlite3.connect(**kwarg)
+			self.conn.row_factory = sqlite3.Row
 			# self.conn.set_autocommit(self.conf["autocommit"])
 			self.cur = self.conn.cursor()
+			
 		except:
 			print ("MySQL connection failed")
 			raise
@@ -115,16 +140,13 @@ class SimpleMysql:
 		"""
 
 		cur = self._select(table, fields, where, order, limit)
-		result = cur.fetchone()
+		result: dict = cur.fetchone()
 
-		row = None
-		if result:
-			Row = namedtuple("Row", [f[0] for f in cur.description])
-			row = Row(*result)
-
-		return row
-
-
+		if not result:
+			return None
+		
+		return namedtuple('Row', result.keys())(**result)
+		
 	def getAll(self, table=None, fields='*', where=None, order=None, limit=None):
 		"""Get all results
 
@@ -137,14 +159,12 @@ class SimpleMysql:
 		"""
 
 		cur = self._select(table, fields, where, order, limit)
-		result = cur.fetchall()
+		results = cur.fetchall()
 
-		rows = None
-		if result:
-			Row = namedtuple("Row", [f[0] for f in cur.description])
-			rows = [Row(*r) for r in result]
-
-		return rows
+		if not results:
+			return None
+		
+		return [namedtuple('Row', result.keys())(**result) for result in results]
 
 	def lastId(self):
 		"""Get the last insert id"""
@@ -170,15 +190,12 @@ class SimpleMysql:
 		"""
 
 		cur = self._select_join(tables, fields, join_fields, where, order, limit)
-		result = cur.fetchall()
+		results = cur.fetchall()
 
-		rows = None
-		if result:
-			Row = namedtuple("Row", [f[0] for f in cur.description])
-			rows = [Row(*r) for r in result]
-
-		return rows
-
+		if not results:
+			return None
+		
+		return [namedtuple('Row', result.keys())(**result) for result in results]
 
 	def insert(self, table, data):
 		"""Insert a record"""
@@ -210,7 +227,6 @@ class SimpleMysql:
 		return self.query(sql, list(data.values()) + where[1] if where and len(where) > 1 else list(data.values())
 						).rowcount
 
-
 	def insertOrUpdate(self, table, data, keys):
 		insert_data = data.copy()
 
@@ -234,7 +250,6 @@ class SimpleMysql:
 
 		return self.query(sql, where[1] if where and len(where) > 1 else None).rowcount
 
-
 	def query(self, sql, params = []):
 		"""Run a raw query"""
 		params = params if params and len(params) > 0 else None
@@ -255,7 +270,6 @@ class SimpleMysql:
 
 		return self.cur
 		
-	
 	def execute(self, sql, params=[]):
 		return self.query(sql, params)
 
